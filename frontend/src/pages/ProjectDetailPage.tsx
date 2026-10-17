@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getProject } from '../../src/api/projects';
+import { ProjectMembersPanel } from '../components/projects/ProjectMembersPanel';
 import { getProjectTasks } from '../../src/api/tasks';
 import { getProjectBoards, deleteBoard } from '../../src/api/boards';
 import { TaskBoard } from '../components/tasks/TaskBoard';
@@ -266,64 +267,7 @@ export const ProjectDetailPage: React.FC = () => {
       )}
 
       {activeTab === 'members' && (
-        <div className="max-w-2xl bg-white rounded-2xl border border-slate-200/80 p-6 space-y-6">
-          <div className="space-y-1">
-            <h3 className="text-base font-bold text-slate-900">Project Permissions & Access</h3>
-            <p className="text-xs text-slate-500">
-              Access permissions are enforced server-side through Django's Membership model.
-            </p>
-          </div>
-
-          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm">
-                <Shield className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-slate-900">Your Current Membership</p>
-                <p className="text-xs text-slate-500">Role in "{project.name}"</p>
-              </div>
-            </div>
-            <RoleBadge role={project.role} />
-          </div>
-
-          <div className="space-y-3 pt-2">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Role Capabilities Matrix
-            </h4>
-            <div className="space-y-2 text-xs">
-              <div className="p-3 rounded-xl border border-slate-200/60 bg-white">
-                <div className="flex items-center justify-between font-semibold text-slate-800 mb-1">
-                  <span>Owner</span>
-                  <RoleBadge role="owner" />
-                </div>
-                <p className="text-slate-500">
-                  Full control: create, edit, and delete project; manage tasks and dependencies; create and delete whiteboards.
-                </p>
-              </div>
-
-              <div className="p-3 rounded-xl border border-slate-200/60 bg-white">
-                <div className="flex items-center justify-between font-semibold text-slate-800 mb-1">
-                  <span>Editor</span>
-                  <RoleBadge role="editor" />
-                </div>
-                <p className="text-slate-500">
-                  Collaboration control: update project details; create, update, and complete tasks; create and draw on whiteboards.
-                </p>
-              </div>
-
-              <div className="p-3 rounded-xl border border-slate-200/60 bg-white">
-                <div className="flex items-center justify-between font-semibold text-slate-800 mb-1">
-                  <span>Viewer</span>
-                  <RoleBadge role="viewer" />
-                </div>
-                <p className="text-slate-500">
-                  Read-only access: view project tasks and inspect whiteboards. Cannot modify tasks or delete boards.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <ProjectMembersPanel projectId={project.id} isOwner={isOwner} />
       )}
 
       {activeTab === 'settings' && (

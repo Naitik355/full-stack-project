@@ -39,7 +39,7 @@ export async function deleteProject(projectId: number): Promise<{ message: strin
 }
 
 
-export type ProjectMemberRole = 'OWNER' | 'EDITOR' | 'VIEWER';
+export type ProjectMemberRole = 'owner' | 'editor' | 'viewer';
 
 export interface ProjectMember {
   id?: number;
@@ -59,7 +59,7 @@ export async function getProjectMembers(projectId: number): Promise<ProjectMembe
 export async function addProjectMember(
   projectId: number,
   username: string,
-  role: 'EDITOR' | 'VIEWER'
+  role: 'editor' | 'viewer'
 ): Promise<unknown> {
   return request(`/projects/${projectId}/members/`, {
     method: 'POST',
@@ -70,7 +70,7 @@ export async function addProjectMember(
 export async function updateProjectMember(
   projectId: number,
   userId: number,
-  role: 'EDITOR' | 'VIEWER'
+  role: 'editor' | 'viewer'
 ): Promise<unknown> {
   return request(`/projects/${projectId}/members/${userId}/`, {
     method: 'PATCH',

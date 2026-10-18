@@ -21,7 +21,7 @@ export const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({
 }) => {
   const [members, setMembers] = useState<ProjectMember[]>([]);
   const [username, setUsername] = useState('');
-  const [newRole, setNewRole] = useState<'EDITOR' | 'VIEWER'>('EDITOR');
+  const [newRole, setNewRole] = useState<'editor' | 'viewer'>('editor');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,10 +93,10 @@ export const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({
           </label>
           <label className="block">
             <span className="block text-xs font-semibold text-slate-600 mb-1.5">Role</span>
-            <select value={newRole} onChange={(event) => setNewRole(event.target.value as 'EDITOR' | 'VIEWER')}
+            <select value={newRole} onChange={(event) => setNewRole(event.target.value as 'editor' | 'viewer')}
               className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm bg-white">
-              <option value="EDITOR">Editor</option>
-              <option value="VIEWER">Viewer</option>
+              <option value="editor">Editor</option>
+              <option value="viewer">Viewer</option>
             </select>
           </label>
           <div className="flex items-end">
@@ -132,16 +132,25 @@ export const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({
                 <div className="flex items-center gap-2">
                   {isOwner && !isProjectOwner && userId !== undefined ? (
                     <>
-                      <select aria-label={`Role for ${member.username}`}
-                        value={role === 'VIEWER' ? 'VIEWER' : 'EDITOR'}
+                      <select
+                        aria-label={`Role for ${member.username}`}
+                        value={String(member.role).toLowerCase() === 'viewer' ? 'viewer' : 'editor'}
                         disabled={saving}
-                        onChange={(event) => void runMemberAction(
-                          () => updateProjectMember(projectId, userId, event.target.value as 'EDITOR' | 'VIEWER'),
-                          `Updated ${member.username}'s role.`
-                        )}
-                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold">
-                        <option value="EDITOR">Editor</option>
-                        <option value="VIEWER">Viewer</option>
+                        onChange={(event) =>
+                          void runMemberAction(
+                            () =>
+                              updateProjectMember(
+                                projectId,
+                                userId,
+                                event.target.value as 'editor' | 'viewer'
+                              ),
+                            `Updated ${member.username}'s role.`
+                          )
+                        }
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold"
+                      >
+                        <option value="editor">Editor</option>
+                        <option value="viewer">Viewer</option>
                       </select>
                       <button type="button" title={`Remove ${member.username}`} aria-label={`Remove ${member.username}`}
                         disabled={saving}
@@ -158,8 +167,8 @@ export const ProjectMembersPanel: React.FC<ProjectMembersPanelProps> = ({
                       </button>
                     </>
                   ) : (
-                    <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${isProjectOwner ? 'bg-indigo-50 text-indigo-700' : role === 'VIEWER' ? 'bg-slate-100 text-slate-700' : 'bg-emerald-50 text-emerald-700'}`}>
-                      {isProjectOwner ? 'Owner' : role === 'VIEWER' ? 'Viewer' : 'Editor'}
+                    <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${isProjectOwner ? 'bg-indigo-50 text-indigo-700' : role === 'viewer' ? 'bg-slate-100 text-slate-700' : 'bg-emerald-50 text-emerald-700'}`}>
+                      {isProjectOwner ? 'Owner' : role === 'viewer' ? 'viewer' : 'editor'}
                     </span>
                   )}
                 </div>

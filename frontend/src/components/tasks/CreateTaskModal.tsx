@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal } from '../common/Modal';
 import { Input } from '../common/Input';
 import { Textarea } from '../common/Textarea';
 import { Select } from '../common/Select';
 import { Button } from '../common/Button';
 import { createTask } from '../../api/tasks';
+import { getProjectMembers } from '../../api/projects';
+import type { ProjectMember } from '../../api/projects';
 import { useToast } from '../../context/ToastContext';
 import type { Task, TaskStatus, TaskPriority } from '../../types/task';
 
@@ -26,9 +28,20 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   const [status, setStatus] = useState<TaskStatus>('todo');
   const [priority, setPriority] = useState<TaskPriority>('medium');
   const [dueDate, setDueDate] = useState('');
+  const [assigneeId, setAssigneeId] = useState('');
+  const [members, setMembers] = useState<ProjectMember[]>([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { success, error: toastError } = useToast();
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let active = true;
+    getProjectMembers(projectId)
+      .then((results) => { if (active) setMembers(results); })
+      .catch(() => { if (active) setMembers([]); });
+    return () => { active = false; };
+  }, [isOpen, projectId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +59,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
         status,
         priority,
         due_date: dueDate || null,
+        assigned_to: assigneeId ? Number(assigneeId) : null,
       });
       success('Task Created', `Task "${created.title}" added to project.`);
       setTitle('');
@@ -53,6 +67,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
       setStatus('todo');
       setPriority('medium');
       setDueDate('');
+      setAssigneeId('');
       onClose();
       onCreated(created);
     } catch (err: any) {
@@ -69,15 +84,11 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Create New Task"
-      description="Add an actionable work item with priority and due date."
+      description="Add an actionable work item with priority, assignee and due date."
       footer={
         <>
-          <Button variant="ghost" onClick={onClose} disabled={isLoading}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} isLoading={isLoading}>
-            Create Task
-          </Button>
+          <Button variant="ghost" onClick={onClose} disabled={isLoading}>Cancel</Button>
+          <Button onClick={handleSubmit} isLoading={isLoading}>Create Task</Button>
         </>
       }
     >
@@ -120,6 +131,18 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
             ]}
           />
         </div>
+        <Select
+          label="Assignee (Optional)"
+          value={assigneeId}
+          onChange={(e) => setAssigneeId(e.target.value)}
+          options={[
+            { value: '', label: 'Unassigned' },
+            ...members.map((member) => ({
+              value: String(member.user_id ?? member.id ?? ''),
+              label: member.username,
+            })).filter((option) => option.value !== ''),
+          ]}
+        />
         <Input
           label="Due Date (Optional)"
           type="date"

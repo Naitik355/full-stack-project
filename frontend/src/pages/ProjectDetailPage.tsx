@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getProject } from '../../src/api/projects';
 import { ProjectMembersPanel } from '../components/projects/ProjectMembersPanel';
+import { ProjectDocumentsPanel } from '../components/projects/ProjectDocumentsPanel';
 import { getProjectTasks } from '../../src/api/tasks';
 import { getProjectBoards, deleteBoard } from '../../src/api/boards';
 import { TaskBoard } from '../components/tasks/TaskBoard';
@@ -15,6 +16,7 @@ import { EmptyState } from '../components/common/EmptyState';
 import { PageHeaderSkeleton, CardSkeleton } from '../components/common/LoadingSkeleton';
 import {
   FolderKanban,
+  FileText,
   CheckSquare,
   Presentation,
   Users,
@@ -32,7 +34,7 @@ import type { Task } from '../types/task';
 import type { Board } from '../types/board';
 import { useToast } from '../context/ToastContext';
 
-type TabType = 'tasks' | 'whiteboards' | 'members' | 'settings';
+type TabType = 'tasks' | 'whiteboards' | 'docs' | 'members' | 'settings';
 
 export const ProjectDetailPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -180,6 +182,7 @@ export const ProjectDetailPage: React.FC = () => {
         {[
           { id: 'tasks', label: 'Tasks', icon: CheckSquare, count: tasks.length },
           { id: 'whiteboards', label: 'Whiteboards', icon: Presentation, count: boards.length },
+          { id: 'docs', label: 'Docs & Notes', icon: FileText },
           { id: 'members', label: 'Members & Roles', icon: Users },
           { id: 'settings', label: 'Settings', icon: SettingsIcon },
         ].map((tab) => {
@@ -264,6 +267,10 @@ export const ProjectDetailPage: React.FC = () => {
             </div>
           )}
         </div>
+      )}
+
+      {activeTab === 'docs' && (
+        <ProjectDocumentsPanel projectId={project.id} canEdit={canEdit} />
       )}
 
       {activeTab === 'members' && (

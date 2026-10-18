@@ -39,3 +39,26 @@ class Membership(models.Model):
 
     def __str__(self):
         return f"{self.user}-{self.project} ({self.role})"
+
+class ProjectDocuments(models.Model):
+    project=models.ForeignKey(
+        Projects,
+        on_delete=models.CASCADE,
+        related_name="documents"
+    )
+    title=models.CharField(max_length=200)
+    pad_id=models.CharField(max_length=200,unique=True)
+    created_by=models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="created_project_documents"
+    )
+    created_at=models.DateTimeField(auto_now_add=True)
+    updated_at=models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering=["-created_at"]
+    
+    def __str__(self):
+        return self.title
+    

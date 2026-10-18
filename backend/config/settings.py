@@ -96,6 +96,8 @@ DATABASES = {
         'PORT':env("DB_PORT"),
     }
 }
+ETHERPAD_API_URL=env("ETHERPAD_API_URL",default="http://127.0.0.1:9001")
+ETHERPAD_API_KEY=env("ETHERPAD_API_KEY")
 
 
 # Password validation

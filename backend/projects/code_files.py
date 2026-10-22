@@ -52,7 +52,7 @@ def safe_path(value):
 
 
 def read_content(item):
-    with item.file.open("r") as stream:
+    with item.file.open("rb") as stream:
         return stream.read().decode("utf-8")
 
 
@@ -67,7 +67,7 @@ def project_code_files(request, project_id):
 
     if request.method == "GET":
         files = ProjectCodeFile.objects.filter(
-            project_id=project_id
+            projects_id=project_id
         ).order_by("relative_path")
 
         return JsonResponse({
@@ -94,12 +94,12 @@ def project_code_files(request, project_id):
         return JsonResponse({"error": "File exceeds 1 MB."}, status=413)
 
     if ProjectCodeFile.objects.filter(
-        project_id=project_id, relative_path=path
+        projects_id=project_id, relative_path=path
     ).exists():
         return JsonResponse({"error": "File path already exists."}, status=409)
 
     item = ProjectCodeFile(
-        project_id=project_id,
+        projects_id=project_id,
         name=PurePosixPath(path).name,
         relative_path=path,
         created_by=request.user,
@@ -131,7 +131,7 @@ def project_code_file_detail(request, project_id, file_id):
     item = get_object_or_404(
         ProjectCodeFile,
         id=file_id,
-        project_id=project_id,
+        projects_id=project_id,
     )
 
     if request.method == "GET":

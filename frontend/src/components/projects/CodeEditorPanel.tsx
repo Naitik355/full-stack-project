@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Editor from '@monaco-editor/react';
-import { Code2, FilePlus2, FolderOpen, Loader2, RefreshCw, Save } from 'lucide-react';
+import { Code2, FilePlus2, FolderOpen, Loader2, Play, RefreshCw, Save, Terminal } from 'lucide-react';
 import { Button } from '../common/Button';
 import { useToast } from '../../context/ToastContext';
 import {
@@ -56,6 +56,8 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ projectId, can
   const [saving, setSaving] = useState(false);
   const [creating, setCreating] = useState(false);
   const [conflict, setConflict] = useState(false);
+  const [runOutput, setRunOutput] = useState<string[]>([]);
+  const [running, setRunning] = useState(false);
   const { success, error: toastError } = useToast();
 
   const dirty = content !== savedContent;
@@ -148,6 +150,34 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ projectId, can
     }
   };
 
+  const handleRun = () => {
+    if (!selectedFile) return;
+    if (languageForPath(selectedFile.path) !== 'javascript') {
+      setRunOutput(['Run currently supports JavaScript (.js/.jsx) files only. Other languages need a configured execution service.']);
+      return;
+    }
+    setRunning(true);
+    setRunOutput([]);
+    const workerSource = [
+      "self.onmessage = function(event) {",
+      "  var output = [];",
+      "  function format(args) { return args.map(function(value) { try { return typeof value === 'string' ? value : JSON.stringify(value); } catch (e) { return String(value); } }).join(' '); }",
+      "  function send(type, args) { output.push(type + ': ' + format(args)); }",
+      "  console.log = function() { send('LOG', Array.from(arguments)); };",
+      "  console.info = function() { send('INFO', Array.from(arguments)); };",
+      "  console.warn = function() { send('WARN', Array.from(arguments)); };",
+      "  console.error = function() { send('ERROR', Array.from(arguments)); };",
+      "  try { (new Function(event.data))(); self.postMessage(output.length ? output : ['Program finished with no console output.']); }",
+      "  catch (error) { self.postMessage(['ERROR: ' + (error && error.stack ? error.stack : String(error))]); }",
+      "};"
+    ].join('\n');
+    const blobUrl = URL.createObjectURL(new Blob([workerSource], { type: 'text/javascript' }));
+    const worker = new Worker(blobUrl);
+    const timeout = window.setTimeout(() => { worker.terminate(); URL.revokeObjectURL(blobUrl); setRunOutput(['Stopped: execution exceeded 2 seconds.']); setRunning(false); }, 2000);
+    worker.onmessage = (event: MessageEvent<string[]>) => { window.clearTimeout(timeout); worker.terminate(); URL.revokeObjectURL(blobUrl); setRunOutput(event.data); setRunning(false); };
+    worker.onerror = (event) => { window.clearTimeout(timeout); worker.terminate(); URL.revokeObjectURL(blobUrl); setRunOutput(['ERROR: ' + event.message]); setRunning(false); };
+    worker.postMessage(content);
+  };
   const refreshSelected = async () => {
     if (!selectedFile) return;
     if (dirty && !window.confirm('Reload this file and discard your unsaved changes?')) return;
@@ -191,6 +221,10 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ projectId, can
               New file
             </Button>
           )}
+          <Button size="sm" variant="outline" onClick={handleRun} disabled={!selectedFile || running}
+            leftIcon={running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}>
+            {running ? 'Running…' : 'Run'}
+          </Button>
           <Button size="sm" onClick={() => void handleSave()} disabled={!canEdit || !selectedFile || !dirty || saving || conflict}
             leftIcon={saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}>
             Save
@@ -266,8 +300,15 @@ export const CodeEditorPanel: React.FC<CodeEditorPanelProps> = ({ projectId, can
           )}
         </section>
       </div>
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-slate-950 text-slate-100">
+        <div className="flex items-center gap-2 border-b border-slate-700 px-4 py-2.5 text-xs font-semibold">
+          <Terminal className="h-4 w-4" /> Run output
+          <button type="button" className="ml-auto text-slate-300 hover:text-white" onClick={() => setRunOutput([])}>Clear</button>
+        </div>
+        <pre className="max-h-48 min-h-16 overflow-auto whitespace-pre-wrap break-words p-4 font-mono text-xs">{runOutput.length ? runOutput.join('\n') : 'Run a JavaScript (.js) file to see console output here.'}</pre>
+      </section>
       <p className="text-[11px] leading-5 text-slate-500">
-        Access is enforced by the API as well as this interface. GitHub synchronization and real-time collaboration are not included in this first version.
+        JavaScript runs in a temporary browser worker with a 2-second timeout. This is a preview, not a secure sandbox. Python, TypeScript, and other languages need a server-side execution service. GitHub sync and real-time collaboration are not included.
       </p>
     </div>
   );

@@ -33,7 +33,7 @@ export const ExcalidrawWrapper: React.FC<ExcalidrawWrapperProps> = ({
     return localStorage.getItem('convergedesk_collab_server_url') || 'http://127.0.0.1:80';
   });
   const [isCollabSettingsOpen, setIsCollabSettingsOpen] = useState(false);
-  const [embedStandalone, setEmbedStandalone] = useState(false);
+  const [embedStandalone, setEmbedStandalone] = useState(true);
   const [isFullScreen, setIsFullScreen] = useState(false);
 
   const { success } = useToast();

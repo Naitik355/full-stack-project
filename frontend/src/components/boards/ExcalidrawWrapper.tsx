@@ -32,10 +32,16 @@ export const ExcalidrawWrapper: React.FC<ExcalidrawWrapperProps> = ({
 
   const { success } = useToast();
 
-  // Deterministic 128-bit key derived from board room_id for community Excalidraw crypto
+  // Derive a canonical 22-character base64url key from the UUID's 16 bytes.
+  // Encoding the UUID text itself and truncating it can produce a non-canonical key.
   const roomKey = useMemo(() => {
     const cleanUuid = board.room_id.replace(/-/g, '');
-    return btoa(cleanUuid).substring(0, 22).replace(/\+/g, '-').replace(/\//g, '_');
+    const uuidBytes = cleanUuid.match(/.{2}/g)?.map((byte) => parseInt(byte, 16)) ?? [];
+    const binaryKey = String.fromCharCode(...uuidBytes);
+    return btoa(binaryKey)
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/g, '');
   }, [board.room_id]);
 
   // Clean room id (alphanumeric 20 chars or standard uuid)

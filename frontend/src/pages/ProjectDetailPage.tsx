@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getProject } from '../../src/api/projects';
 import { ProjectMembersPanel } from '../components/projects/ProjectMembersPanel';
 import { ProjectDocumentsPanel } from '../components/projects/ProjectDocumentsPanel';
+import { CodeEditorPanel } from '../components/projects/CodeEditorPanel';
 import { getProjectTasks } from '../../src/api/tasks';
 import { getProjectBoards, deleteBoard } from '../../src/api/boards';
 import { TaskBoard } from '../components/tasks/TaskBoard';
@@ -28,13 +29,14 @@ import {
   Shield,
   Clock,
   Sparkles,
+  Code2,
 } from 'lucide-react';
 import type { Project } from '../types/project';
 import type { Task } from '../types/task';
 import type { Board } from '../types/board';
 import { useToast } from '../context/ToastContext';
 
-type TabType = 'tasks' | 'whiteboards' | 'docs' | 'members' | 'settings';
+type TabType = 'tasks' | 'whiteboards' | 'docs' | 'code' | 'members' | 'settings';
 
 export const ProjectDetailPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -183,6 +185,7 @@ export const ProjectDetailPage: React.FC = () => {
           { id: 'tasks', label: 'Tasks', icon: CheckSquare, count: tasks.length },
           { id: 'whiteboards', label: 'Whiteboards', icon: Presentation, count: boards.length },
           { id: 'docs', label: 'Docs & Notes', icon: FileText },
+          { id: 'code', label: 'Code Editor', icon: Code2 },
           { id: 'members', label: 'Members & Roles', icon: Users },
           { id: 'settings', label: 'Settings', icon: SettingsIcon },
         ].map((tab) => {
@@ -271,6 +274,10 @@ export const ProjectDetailPage: React.FC = () => {
 
       {activeTab === 'docs' && (
         <ProjectDocumentsPanel projectId={project.id} canEdit={canEdit} />
+      )}
+
+      {activeTab === 'code' && (
+        <CodeEditorPanel projectId={project.id} canEdit={canEdit} />
       )}
 
       {activeTab === 'members' && (

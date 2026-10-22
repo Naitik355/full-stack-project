@@ -1,17 +1,12 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Excalidraw } from '@excalidraw/excalidraw';
-import '@excalidraw/excalidraw/index.css';
+import React, { useState, useMemo } from 'react';
 import {
   Users,
   Copy,
   Check,
-  ExternalLink,
   ShieldAlert,
   Sparkles,
-  Info,
   Maximize2,
   Minimize2,
-  RefreshCw,
   Sliders,
 } from 'lucide-react';
 import { Button } from '../common/Button';
@@ -33,7 +28,6 @@ export const ExcalidrawWrapper: React.FC<ExcalidrawWrapperProps> = ({
     return localStorage.getItem('convergedesk_collab_server_url') || 'http://127.0.0.1:80';
   });
   const [isCollabSettingsOpen, setIsCollabSettingsOpen] = useState(false);
-  const [embedStandalone, setEmbedStandalone] = useState(true);
   const [isFullScreen, setIsFullScreen] = useState(false);
 
   const { success } = useToast();
@@ -109,30 +103,6 @@ export const ExcalidrawWrapper: React.FC<ExcalidrawWrapperProps> = ({
             {copied ? 'Copied' : 'Invite Link'}
           </Button>
 
-          {/* Open Standalone Server */}
-          <a
-            href={fullCollabUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-colors"
-            title="Open in standalone collaboration service"
-          >
-            <span>Live Server</span>
-            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-          </a>
-
-          {/* Toggle Standalone Embed vs Local Component */}
-          <button
-            onClick={() => setEmbedStandalone(!embedStandalone)}
-            className={`p-1.5 rounded-xl text-xs font-medium border transition-colors ${
-              embedStandalone
-                ? 'bg-indigo-600/20 border-indigo-500/50 text-indigo-300'
-                : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
-            }`}
-            title={embedStandalone ? 'Switch to embedded canvas' : 'Switch to live room embed'}
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
 
           {/* Collab Settings / Security Info */}
           <button
@@ -156,28 +126,12 @@ export const ExcalidrawWrapper: React.FC<ExcalidrawWrapperProps> = ({
 
       {/* Main Canvas Area */}
       <div className="flex-1 w-full h-full relative bg-[#121212] overflow-hidden">
-        {embedStandalone ? (
-          <iframe
-            src={fullCollabUrl}
-            title={board.title}
-            className="w-full h-full border-0"
-            allow="clipboard-read; clipboard-write; camera; microphone"
-          />
-        ) : (
-          <div className="excalidraw-container w-full h-full">
-            <Excalidraw
-              theme="light"
-              name={board.title}
-              UIOptions={{
-                canvasActions: {
-                  loadScene: true,
-                  saveToActiveFile: true,
-                  export: { saveFileToDisk: true },
-                },
-              }}
-            />
-          </div>
-        )}
+        <iframe
+          src={fullCollabUrl}
+          title={board.title}
+          className="w-full h-full border-0"
+          allow="clipboard-read; clipboard-write; camera; microphone"
+        />
       </div>
 
       {/* Collaboration Settings & Security Modal */}

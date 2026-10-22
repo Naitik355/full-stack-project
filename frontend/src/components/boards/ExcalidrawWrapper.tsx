@@ -32,8 +32,11 @@ export const ExcalidrawWrapper: React.FC<ExcalidrawWrapperProps> = ({
 
   const { success } = useToast();
 
-  // Derive a canonical 22-character base64url key from the UUID's 16 bytes.
-  // Encoding the UUID text itself and truncating it can produce a non-canonical key.
+  // Excalidraw's collaboration service uses a 20-character hexadecimal room ID.
+  // Keep it deterministic from the board UUID so every member joins the same room.
+  const roomId = useMemo(() => board.room_id.replace(/-/g, '').slice(0, 20), [board.room_id]);
+
+  // Derive a stable 22-character base64url key from the board UUID's 16 bytes.
   const roomKey = useMemo(() => {
     const cleanUuid = board.room_id.replace(/-/g, '');
     const uuidBytes = cleanUuid.match(/.{2}/g)?.map((byte) => parseInt(byte, 16)) ?? [];
@@ -44,8 +47,7 @@ export const ExcalidrawWrapper: React.FC<ExcalidrawWrapperProps> = ({
       .replace(/=+$/g, '');
   }, [board.room_id]);
 
-  // Clean room id (alphanumeric 20 chars or standard uuid)
-  const roomHash = `#room=${board.room_id},${roomKey}`;
+  const roomHash = `#room=${roomId},${roomKey}`;
   const fullCollabUrl = `${collabServerUrl}/${roomHash}`;
 
   const handleCopyLink = () => {
@@ -78,14 +80,13 @@ export const ExcalidrawWrapper: React.FC<ExcalidrawWrapperProps> = ({
           <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-400">
             <span>Room ID:</span>
             <span className="font-mono text-slate-200 bg-slate-800 px-2 py-0.5 rounded border border-slate-700/60 text-[11px]">
-              {board.room_id}
+              {roomId}
             </span>
           </div>
         </div>
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2">
-          {/* AI Drawing to Code Trigger */}
           {onOpenAiAssistant && (
             <Button
               size="sm"
@@ -98,7 +99,6 @@ export const ExcalidrawWrapper: React.FC<ExcalidrawWrapperProps> = ({
             </Button>
           )}
 
-          {/* Copy Collaboration URL */}
           <Button
             size="sm"
             variant="secondary"
@@ -109,8 +109,6 @@ export const ExcalidrawWrapper: React.FC<ExcalidrawWrapperProps> = ({
             {copied ? 'Copied' : 'Invite Link'}
           </Button>
 
-
-          {/* Collab Settings / Security Info */}
           <button
             onClick={() => setIsCollabSettingsOpen(true)}
             className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-700 transition-colors"
@@ -119,7 +117,6 @@ export const ExcalidrawWrapper: React.FC<ExcalidrawWrapperProps> = ({
             <Sliders className="w-4 h-4" />
           </button>
 
-          {/* Full Screen Toggle */}
           <button
             onClick={() => setIsFullScreen(!isFullScreen)}
             className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-700 transition-colors"
@@ -130,7 +127,6 @@ export const ExcalidrawWrapper: React.FC<ExcalidrawWrapperProps> = ({
         </div>
       </div>
 
-      {/* Main Canvas Area */}
       <div className="flex-1 w-full h-full relative bg-[#121212] overflow-hidden">
         <iframe
           src={fullCollabUrl}
@@ -140,7 +136,6 @@ export const ExcalidrawWrapper: React.FC<ExcalidrawWrapperProps> = ({
         />
       </div>
 
-      {/* Collaboration Settings & Security Modal */}
       <Modal
         isOpen={isCollabSettingsOpen}
         onClose={() => setIsCollabSettingsOpen(false)}
@@ -149,7 +144,6 @@ export const ExcalidrawWrapper: React.FC<ExcalidrawWrapperProps> = ({
         maxWidth="lg"
       >
         <div className="space-y-4 text-xs text-slate-600">
-          {/* Security alert box */}
           <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-50 border border-amber-200/90 text-amber-900">
             <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <div className="space-y-1">
@@ -162,7 +156,6 @@ export const ExcalidrawWrapper: React.FC<ExcalidrawWrapperProps> = ({
             </div>
           </div>
 
-          {/* Server URL Input */}
           <div className="space-y-1.5 pt-2">
             <label className="block font-semibold uppercase tracking-wider text-slate-700">
               Collaboration Service Endpoint
@@ -187,10 +180,10 @@ export const ExcalidrawWrapper: React.FC<ExcalidrawWrapperProps> = ({
             </p>
           </div>
 
-          {/* Details on Current Room */}
           <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1">
             <p className="font-semibold text-slate-700">Current Room Parameters:</p>
             <p className="font-mono text-[11px] text-slate-600">Django UUID: {board.room_id}</p>
+            <p className="font-mono text-[11px] text-slate-600">Excalidraw Room ID: {roomId}</p>
             <p className="font-mono text-[11px] text-slate-600">Derived Key: {roomKey}</p>
             <p className="font-mono text-[11px] text-slate-600 truncate">Target Room URL: {fullCollabUrl}</p>
           </div>

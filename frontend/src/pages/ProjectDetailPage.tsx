@@ -276,9 +276,9 @@ export const ProjectDetailPage: React.FC = () => {
         <ProjectDocumentsPanel projectId={project.id} canEdit={canEdit} />
       )}
 
-      {activeTab === 'code' && (
+      <div className={activeTab === 'code' ? 'block' : 'hidden'}>
         <CodeEditorPanel projectId={project.id} canEdit={canEdit} />
-      )}
+      </div>
 
       {activeTab === 'members' && (
         <ProjectMembersPanel projectId={project.id} isOwner={isOwner} />

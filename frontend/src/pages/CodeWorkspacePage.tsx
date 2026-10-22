@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Code2,
   FileCode,
@@ -10,6 +10,7 @@ import {
   WifiOff,
   Terminal,
   Folder,
+  Play,
 } from 'lucide-react';
 import { Button } from '../components/common/Button';
 import { useToast } from '../context/ToastContext';
@@ -61,8 +62,25 @@ class CollaborativeDocument(models.Model):
   },
 ];
 
+const STORAGE_KEY = 'convergedesk-code-workspace-files-v1';
+
+function loadSavedFiles(): WorkspaceFile[] {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return initialFiles;
+    const parsed: unknown = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.every((file) => file && typeof file.name === 'string' && typeof file.language === 'string' && typeof file.content === 'string')) return parsed as WorkspaceFile[];
+  } catch { /* Use starter files if browser storage is unavailable or invalid. */ }
+  return initialFiles;
+}
+
 export const CodeWorkspacePage: React.FC = () => {
-  const [files, setFiles] = useState<WorkspaceFile[]>(initialFiles);
+  const [files, setFiles] = useState<WorkspaceFile[]>(loadSavedFiles);
+  const [runOutput, setRunOutput] = useState<string[]>([]);
+  const [isRunning, setIsRunning] = useState(false);
+  useEffect(() => {
+    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(files)); } catch { /* Storage may be unavailable. */ }
+  }, [files]);
   const [activeFileIndex, setActiveFileIndex] = useState<number>(0);
   const [copied, setCopied] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
@@ -74,6 +92,24 @@ export const CodeWorkspacePage: React.FC = () => {
     setFiles((prev) =>
       prev.map((f, i) => (i === activeFileIndex ? { ...f, content: newContent } : f))
     );
+  };
+
+  const handleRunCode = () => {
+    if (!currentFile) return;
+    const extension = currentFile.name.split('.').pop()?.toLowerCase();
+    if (!['js', 'jsx'].includes(extension || '')) {
+      setRunOutput(['Run supports .js/.jsx files only. TypeScript/TSX and Python require a configured execution or preview service.']);
+      return;
+    }
+    setIsRunning(true);
+    setRunOutput([]);
+    const workerSource = "self.onmessage=function(event){var output=[];function fmt(args){return args.map(function(v){try{return typeof v==='string'?v:JSON.stringify(v)}catch(e){return String(v)}}).join(' ')};['log','info','warn','error'].forEach(function(t){console[t]=function(){output.push(t.toUpperCase()+': '+fmt(Array.from(arguments)))}});try{(new Function(event.data))();self.postMessage(output.length?output:['Program finished with no console output.'])}catch(e){self.postMessage(['ERROR: '+(e&&e.stack?e.stack:String(e))])}}";
+    const blobUrl = URL.createObjectURL(new Blob([workerSource], { type: 'text/javascript' }));
+    const worker = new Worker(blobUrl);
+    const timeout = window.setTimeout(() => { worker.terminate(); URL.revokeObjectURL(blobUrl); setRunOutput(['Stopped: execution exceeded 2 seconds.']); setIsRunning(false); }, 2000);
+    worker.onmessage = (event: MessageEvent<string[]>) => { window.clearTimeout(timeout); worker.terminate(); URL.revokeObjectURL(blobUrl); setRunOutput(event.data); setIsRunning(false); };
+    worker.onerror = (event) => { window.clearTimeout(timeout); worker.terminate(); URL.revokeObjectURL(blobUrl); setRunOutput(['ERROR: ' + event.message]); setIsRunning(false); };
+    worker.postMessage(currentFile.content);
   };
 
   const handleCopyCode = () => {
@@ -135,10 +171,13 @@ export const CodeWorkspacePage: React.FC = () => {
             <span className="text-[11px] text-slate-300 ml-1">2 Peers</span>
           </div>
 
+          <Button size="sm" variant="outline" onClick={handleRunCode} disabled={isRunning || !currentFile} leftIcon={<Play className="w-3.5 h-3.5" />} className="text-slate-300 hover:text-white h-8 text-xs bg-slate-800 hover:bg-slate-700">
+            {isRunning ? 'Running…' : 'Run'}
+          </Button>
           <Button
             size="sm"
             variant="ghost"
-            onClick={handleCopyCode}
+            onClick={handleCopyCode
             leftIcon={copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
             className="text-slate-300 hover:text-white h-8 text-xs bg-slate-800 hover:bg-slate-700"
           >
@@ -161,6 +200,11 @@ export const CodeWorkspacePage: React.FC = () => {
         >
           {isConnected ? 'Simulate Disconnect' : 'Simulate Yjs Sync'}
         </button>
+      </div>
+
+      <div className="shrink-0 border-b border-slate-800 bg-slate-950 px-4 py-2">
+        <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-slate-300"><Terminal className="h-3.5 w-3.5" /> Run Output <button type="button" onClick={() => setRunOutput([])} className="ml-auto text-slate-500 hover:text-white">Clear</button></div>
+        <pre className="max-h-24 overflow-auto whitespace-pre-wrap break-words font-mono text-xs text-slate-300">{runOutput.length ? runOutput.join('\n') : 'Run a .js or .jsx file to see output here.'}</pre>
       </div>
 
       {/* Main Workspace Body: File Tree + Code Editor */}

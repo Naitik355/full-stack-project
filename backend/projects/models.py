@@ -1,4 +1,6 @@
 from django.db import models
+import uuid
+from pathlib import Path
 from django.conf import settings
 
 # Create your models here.
@@ -61,4 +63,44 @@ class ProjectDocuments(models.Model):
     
     def __str__(self):
         return self.title
-    
+
+def project_code_file_path(instance, filename):
+    safe_name = Path(filename).name
+    unique_name = f"{uuid.uuid4().hex}_{safe_name}"
+    return f"project_code/{instance.projects_id}/{unique_name}"
+
+
+class ProjectCodeFile(models.Model):
+    projects = models.ForeignKey(
+        Projects,
+        on_delete=models.CASCADE,
+        related_name="code_files",
+    )
+    name = models.CharField(max_length=200)
+    relative_path = models.CharField(max_length=500)
+    file = models.FileField(upload_to=project_code_file_path)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="created_project_code_by",
+    )
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="updated_project_code_by",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    version = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        ordering = ["relative_path"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["projects", "relative_path"],
+                name="unique_project_code_file_path",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.projects_id}: {self.relative_path}"

@@ -63,7 +63,7 @@ export async function addProjectMember(
 ): Promise<unknown> {
   return request(`/projects/${projectId}/members/`, {
     method: 'POST',
-    body: JSON.stringify({ username, role }),
+    body: JSON.stringify({ username, role: role.toLowerCase() }),
   });
 }
 
@@ -74,7 +74,7 @@ export async function updateProjectMember(
 ): Promise<unknown> {
   return request(`/projects/${projectId}/members/${userId}/`, {
     method: 'PATCH',
-    body: JSON.stringify({ role }),
+    body: JSON.stringify({ role: role.toLowerCase() }),
   });
 }
 

@@ -177,7 +177,7 @@ export const CodeWorkspacePage: React.FC = () => {
           <Button
             size="sm"
             variant="ghost"
-            onClick={handleCopyCode
+            onClick={handleCopyCode}
             leftIcon={copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
             className="text-slate-300 hover:text-white h-8 text-xs bg-slate-800 hover:bg-slate-700"
           >

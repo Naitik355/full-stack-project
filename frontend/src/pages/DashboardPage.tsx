@@ -103,7 +103,7 @@ export const DashboardPage: React.FC = () => {
               Collaborative Project Management & Multiplayer Whiteboards
             </h1>
             <p className="text-sm text-slate-300 leading-relaxed">
-              Combine sprint tasks, real-time Excalidraw whiteboards, collaborative coding, and AI wireframe-to-code generation in a single workspace.
+              Combine sprint tasks, real-time tldraw whiteboards, collaborative coding, and AI wireframe-to-code generation in a single workspace.
             </p>
             <div className="flex items-center gap-3 pt-2">
               <Button onClick={() => navigate('/login')} size="lg">
@@ -300,7 +300,7 @@ export const DashboardPage: React.FC = () => {
             Multiplayer Whiteboards
           </h4>
           <p className="text-xs text-slate-500 mt-1">
-            Draw diagrams, sketches, and wireframes in real-time with Excalidraw.
+            Draw diagrams, sketches, and wireframes in real time with tldraw.
           </p>
         </div>
 

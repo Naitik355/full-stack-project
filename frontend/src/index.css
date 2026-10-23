@@ -25,17 +25,6 @@
     overflow-x: hidden;
   }
 
-  /* Excalidraw overrides for seamless container integration */
-  .excalidraw-container {
-    height: 100%;
-    width: 100%;
-    position: relative;
-  }
-
-  .excalidraw-container .excalidraw {
-    height: 100% !important;
-    width: 100% !important;
-  }
 }
 
 /* Custom scrollbars for a polished look */

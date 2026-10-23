@@ -83,7 +83,7 @@ export const WhiteboardsPage: React.FC = () => {
             Multiplayer Whiteboards
           </h2>
           <p className="text-xs text-slate-500">
-            Real-time Excalidraw whiteboards across your team projects
+            Real-time collaborative tldraw whiteboards across your team projects
           </p>
         </div>
 
@@ -122,7 +122,7 @@ export const WhiteboardsPage: React.FC = () => {
         <EmptyState
           icon={<Presentation className="w-7 h-7" />}
           title={search ? 'No matching whiteboards' : 'No whiteboards created yet'}
-          description="Open any of your projects to launch an Excalidraw whiteboard room."
+          description="Open any of your projects to launch a collaborative tldraw whiteboard."
           actionLabel="View Projects"
           actionIcon={<FolderKanban className="w-4 h-4" />}
           onAction={() => navigate('/projects')}

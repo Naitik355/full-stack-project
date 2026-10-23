@@ -16,14 +16,10 @@ import {
   RefreshCw,
   LogOut,
   User,
-  Sliders,
 } from 'lucide-react';
 
 export const SettingsPage: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
-  const [collabUrl, setCollabUrl] = useState(() => {
-    return localStorage.getItem('convergedesk_collab_server_url') || 'http://127.0.0.1:80';
-  });
   const [geminiKey, setGeminiKey] = useState(() => {
     return localStorage.getItem('convergedesk_gemini_key') || '';
   });
@@ -54,11 +50,6 @@ export const SettingsPage: React.FC = () => {
   useEffect(() => {
     runDiagnostics();
   }, []);
-
-  const handleSaveCollabUrl = () => {
-    localStorage.setItem('convergedesk_collab_server_url', collabUrl);
-    success('Settings Updated', `Collaboration server set to ${collabUrl}`);
-  };
 
   const handleSaveGeminiKey = () => {
     localStorage.setItem('convergedesk_gemini_key', geminiKey);
@@ -181,55 +172,29 @@ export const SettingsPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* Integration Endpoints Configuration */}
+      {/* AI Configuration */}
       <Card className="space-y-4">
         <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
-          <Sliders className="w-5 h-5 text-indigo-600" />
-          <h3 className="text-sm font-bold text-slate-900">Collaboration & AI Configuration</h3>
+          <Key className="w-5 h-5 text-indigo-600" />
+          <h3 className="text-sm font-bold text-slate-900">AI Configuration</h3>
         </div>
-
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700">
-              Community Excalidraw Service URL
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={collabUrl}
-                onChange={(e) => setCollabUrl(e.target.value)}
-                placeholder="http://127.0.0.1:80"
-                className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              />
-              <Button size="sm" onClick={handleSaveCollabUrl}>
-                Save
-              </Button>
-            </div>
-            <p className="text-[11px] text-slate-400">
-              Default is <code className="bg-slate-100 px-1 rounded">http://127.0.0.1:80</code> (from <code className="bg-slate-100 px-1 rounded">docker-compose.yaml</code>).
-            </p>
+        <div className="space-y-1.5">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700">
+            Gemini API Key (Drawing-to-Code Generation)
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="password"
+              value={geminiKey}
+              onChange={(e) => setGeminiKey(e.target.value)}
+              placeholder="AIzaSy..."
+              className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            />
+            <Button size="sm" onClick={handleSaveGeminiKey}>Save</Button>
           </div>
-
-          <div className="space-y-1.5 pt-2 border-t border-slate-100">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700">
-              Gemini API Key (Drawing-to-Code Generation)
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="password"
-                value={geminiKey}
-                onChange={(e) => setGeminiKey(e.target.value)}
-                placeholder="AIzaSy..."
-                className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              />
-              <Button size="sm" onClick={handleSaveGeminiKey}>
-                Save
-              </Button>
-            </div>
-            <p className="text-[11px] text-slate-400">
-              Used directly by the AI Drawing-to-Code panel to synthesize React and Tailwind code from canvas drawings.
-            </p>
-          </div>
+          <p className="text-[11px] text-slate-400">
+            Used by the AI Drawing-to-Code panel to generate React and Tailwind code from whiteboard drawings.
+          </p>
         </div>
       </Card>
 

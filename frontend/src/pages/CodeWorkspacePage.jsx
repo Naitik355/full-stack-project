@@ -97,7 +97,7 @@ function CollaborativeMonacoEditor({ roomName, file, onContentChange, onStatus, 
       onStatus('disconnected');
       onPeers([]);
     };
-  }, [editor, monaco, roomName, file.content, onStatus, onPeers]);
+  }, [editor, monaco, roomName, onStatus, onPeers]);
 
   return (
     <Editor

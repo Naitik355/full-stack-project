@@ -233,7 +233,7 @@ export const ProjectDetailPage: React.FC = () => {
             <div>
               <h3 className="text-base font-bold text-slate-900">Project Whiteboards</h3>
               <p className="text-xs text-slate-500">
-                Multiplayer Excalidraw whiteboards tied to this project
+                Multiplayer tldraw whiteboards tied to this project
               </p>
             </div>
             {canEdit && (

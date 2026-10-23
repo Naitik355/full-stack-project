@@ -218,7 +218,7 @@ export const SettingsPage: React.FC = () => {
             <p className="font-bold text-amber-950 mb-1">2. Multiplayer Whiteboard Room Authorization Limitation</p>
             <p>
               The ConvergeDesk Django API enforces authorization on board metadata via project membership checks (<code className="bg-amber-100 px-1 rounded font-mono">GET/PATCH/DELETE /api/boards/&lt;id&gt;/</code>).
-              However, the community Excalidraw Socket.io collaboration server (<code className="bg-amber-100 px-1 rounded font-mono">excalidraw-room-go</code>) does not validate Django session cookies. Anyone possessing the room identifier and encryption key can technically stream draw operations to that room ID. Full end-to-end room authorization requires an authenticating WebSocket proxy.
+              The current tldraw demo sync service is public and does not enforce this application's Django session or project-membership authorization. Anyone who knows the room ID may be able to access or modify the room. Use it only for local testing with non-sensitive data; production use requires a self-hosted sync service with authentication and authorization.
             </p>
           </div>
         </div>

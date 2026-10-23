@@ -88,7 +88,7 @@ export const BoardViewPage: React.FC = () => {
                 {board.title}
               </h2>
               <p className="text-[11px] text-slate-400">
-                Multiplayer Excalidraw Canvas
+                Multiplayer tldraw Canvas
               </p>
             </div>
           </div>

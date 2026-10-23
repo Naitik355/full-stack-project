@@ -1,0 +1,146 @@
+import React, { useEffect, useState } from 'react';
+import { Modal } from '../common/Modal';
+import { Input } from '../common/Input';
+import { Textarea } from '../common/Textarea';
+import { Select } from '../common/Select';
+import { Button } from '../common/Button';
+import { createTask } from '../../api/tasks';
+import { getProjectMembers } from '../../api/projects';
+import { useToast } from '../../context/ToastContext';
+
+export const CreateTaskModal = ({
+  isOpen,
+  onClose,
+  projectId,
+  onCreated,
+}) => {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [status, setStatus] = useState('todo');
+  const [priority, setPriority] = useState('medium');
+  const [dueDate, setDueDate] = useState('');
+  const [assigneeId, setAssigneeId] = useState('');
+  const [members, setMembers] = useState([]);
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { success, error: toastError } = useToast();
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let active = true;
+    getProjectMembers(projectId)
+      .then((results) => { if (active) setMembers(results); })
+      .catch(() => { if (active) setMembers([]); });
+    return () => { active = false; };
+  }, [isOpen, projectId]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!title.trim()) {
+      setError('Task title is required');
+      return;
+    }
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const created = await createTask(projectId, {
+        title: title.trim(),
+        description: description.trim(),
+        status,
+        priority,
+        due_date: dueDate || null,
+        assigned_to: assigneeId ? Number(assigneeId) : null,
+      });
+      success('Task Created', `Task "${created.title}" added to project.`);
+      setTitle('');
+      setDescription('');
+      setStatus('todo');
+      setPriority('medium');
+      setDueDate('');
+      setAssigneeId('');
+      onClose();
+      onCreated(created);
+    } catch (err) {
+      const msg = err?.message || 'Failed to create task';
+      setError(msg);
+      toastError('Creation Failed', msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Create New Task"
+      description="Add an actionable work item with priority, assignee and due date."
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose} disabled={isLoading}>Cancel</Button>
+          <Button onClick={handleSubmit} isLoading={isLoading}>Create Task</Button>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Input
+          label="Task Title"
+          placeholder="e.g. Implement authentication flows"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          error={error}
+          autoFocus
+          required
+        />
+        <Textarea
+          label="Description (Optional)"
+          placeholder="Detailed task specifications and acceptance criteria..."
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={3}
+        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Select
+            label="Status"
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            options={[
+              { value: 'todo', label: 'To Do' },
+              { value: 'in_progress', label: 'In Progress' },
+              { value: 'done', label: 'Done' },
+            ]}
+          />
+          <Select
+            label="Priority"
+            value={priority}
+            onChange={(e) => setPriority(e.target.value)}
+            options={[
+              { value: 'low', label: 'Low' },
+              { value: 'medium', label: 'Medium' },
+              { value: 'high', label: 'High' },
+            ]}
+          />
+        </div>
+        <Select
+          label="Assignee (Optional)"
+          value={assigneeId}
+          onChange={(e) => setAssigneeId(e.target.value)}
+          options={[
+            { value: '', label: 'Unassigned' },
+            ...members.map((member) => ({
+              value: String(member.user_id ?? member.id ?? ''),
+              label: member.username,
+            })).filter((option) => option.value !== ''),
+          ]}
+        />
+        <Input
+          label="Due Date (Optional)"
+          type="date"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+        />
+      </form>
+    </Modal>
+  );
+};

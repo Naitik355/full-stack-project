@@ -55,7 +55,7 @@ export const CreateBoardModal: React.FC<CreateBoardModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Create New Whiteboard"
-      description="Start a collaborative Excalidraw canvas for diagrams, sketches, and wireframes."
+      description="Start a collaborative tldraw canvas for diagrams, sketches, and wireframes."
       footer={
         <>
           <Button variant="ghost" onClick={onClose} disabled={isLoading}>

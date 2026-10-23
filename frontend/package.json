@@ -10,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@excalidraw/excalidraw": "^0.18.1",
     "@tldraw/sync": "^4.4.0",
     "tldraw": "^4.4.0",
     "lucide-react": "^1.57.0",

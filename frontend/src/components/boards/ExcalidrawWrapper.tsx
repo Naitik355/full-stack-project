@@ -47,8 +47,11 @@ export const ExcalidrawWrapper: React.FC<ExcalidrawWrapperProps> = ({
       .replace(/=+$/g, '');
   }, [board.room_id]);
 
+
   const roomHash = `#room=${roomId},${roomKey}`;
-  const fullCollabUrl = `${collabServerUrl}/${roomHash}`;
+  const cleanCollabServer = collabServerUrl.replace(/\/+$/, '');
+  const fullCollabUrl = `${cleanCollabServer}/${roomHash}`;
+
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(fullCollabUrl);

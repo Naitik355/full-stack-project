@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.1",
+    "@tldraw/sync": "^4.4.0",
+    "tldraw": "^4.4.0",
     "lucide-react": "^1.57.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

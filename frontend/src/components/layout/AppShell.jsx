@@ -3,12 +3,15 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Navbar } from './Navbar';
 import { X } from 'lucide-react';
+import { MeetingProvider } from '../../context/MeetingContext';
+import { LiveMeetingLayer } from '../meetings/LiveMeetingLayer';
 
 export const AppShell = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   return (
+    <MeetingProvider>
     <div className="flex h-screen w-screen overflow-hidden bg-slate-50">
       {/* Desktop Sidebar */}
       <div className="hidden md:flex shrink-0">
@@ -49,6 +52,8 @@ export const AppShell = () => {
           <Outlet />
         </main>
       </div>
+      <LiveMeetingLayer />
     </div>
+    </MeetingProvider>
   );
 };

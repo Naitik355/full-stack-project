@@ -197,7 +197,7 @@ def project_member_details(request,project_id,user_id):
     if target.role==Membership.Role.OWNER:
         return JsonResponse({"error":"Project owners cannot be changed here"},status=400)
 
-    if request=="DELETE":
+    if request.method=="DELETE":
         target.delete()
         return JsonResponse({"message":"Member removed successfully"})
 

@@ -10,13 +10,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tldraw/sync": "^4.4.0",
-    "tldraw": "^4.4.0",
+    "@monaco-editor/react": "^4.7.0",
+    "@tldraw/sync": "^5.5.2",
     "lucide-react": "^1.57.0",
+    "monaco-editor": "^0.52.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.4",
-    "@monaco-editor/react": "^4.7.0"
+    "tldraw": "^5.5.2",
+    "y-websocket": "^3.1.0",
+    "yjs": "^13.6.33"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

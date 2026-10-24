@@ -1,4 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState , useRef} from 'react';
+import Editor from '@monaco-editor/react';
+import * as Y from 'yjs';
+import { WebsocketProvider } from 'y-websocket';
 import {
   Code2,
   FileCode,
@@ -78,14 +81,71 @@ export const CodeWorkspacePage = () => {
   const [activeFileIndex, setActiveFileIndex] = useState(0);
   const [copied, setCopied] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const yTextRef=useRef(null);
 
   const { success } = useToast();
   const currentFile = files[activeFileIndex] || files[0];
-
-  const handleContentChange = (newContent) => {
-    setFiles((prev) =>
-      prev.map((f, i) => (i === activeFileIndex ? { ...f, content: newContent } : f))
+  useEffect(()=>{
+    if(!currentFile) return;
+    const ydoc=new Y.Doc();
+    const provider=new WebsocketProvider(
+      'ws://localhost:1234',
+      `convergedesk-project-${currentFile.name}`,
+      ydoc
     );
+    const ytext=ydoc.getText('content');
+    yTextRef.current=ytext;
+    if(ytext.length===0 && currentFile.content){
+      ydoc.transact(()=>{
+        ytext.insert(0,currentFile.content);
+      });
+    }
+    const syncContent=()=>{
+      const sharedContent=ytext.toString();
+      setFiles((previousFiles)=>
+        previousFiles.map((file)=>
+          file.name===currentFile.name ? {...file,content:sharedContent} : file
+
+        )
+      );
+    };
+    ytext.observe(syncContent);
+    const handleStatus=({status})=>{
+      setIsConnected(status==='connected');
+    };
+    provider.on('status',handleStatus);
+    syncContent();
+    return ()=>{
+      ytext.unobserve(syncContent);
+      provider.off('status',handleStatus);
+      provider.destroy();
+      ydoc.destroy();
+      yTextRef.current=null;
+      setIsConnected(false);
+    };
+  },[currentFile?.name]
+  )
+
+  const handleContentChange=(newContent)=>{
+    if(newContent===undefined) return;
+    const ytext=yTextRef.current;
+    if(ytext){
+      const currentSharedContent=ytext.toString();
+      if(currentSharedContent!==newContent){
+        ytext.doc.transact(()=>{
+          ytext.delete(0,ytext.length);
+          if(newContent.length>0){
+            ytext.insert(0,newContent);
+          }
+        });
+      }
+    }else{
+      setFiles((previousFiles)=>
+        previousFiles.map((file,index)=>
+        index===activeFileIndex ? {...file,content:newContent}:file
+      )
+      );
+    }
   };
 
   const handleRunCode = () => {
@@ -147,7 +207,7 @@ export const CodeWorkspacePage = () => {
             }`}
           >
             {isConnected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-            <span>{isConnected ? 'Yjs Connected' : 'Local Edit Mode (Ready for Yjs)'}</span>
+            <span>{isConnected ? 'Yjs Connected' : 'Connecting to Yjs...'}</span>
           </div>
         </div>
 
@@ -192,7 +252,7 @@ export const CodeWorkspacePage = () => {
           onClick={() => setIsConnected(!isConnected)}
           className="text-[10px] font-semibold underline text-indigo-200 hover:text-white"
         >
-          {isConnected ? 'Simulate Disconnect' : 'Simulate Yjs Sync'}
+          {isConnected ? 'Live sync active' : 'Waiting for server'}
         </button>
       </div>
 
@@ -247,19 +307,8 @@ export const CodeWorkspacePage = () => {
           </div>
 
           {/* Code Textarea / Line Number Grid */}
-          <div className="flex-1 flex overflow-hidden relative">
-            <div className="p-4 select-none text-slate-600 font-mono text-xs border-r border-slate-800/60 text-right w-12 shrink-0 bg-slate-950">
-              {currentFile.content.split('\n').map((_, i) => (
-                <div key={i}>{i + 1}</div>
-              ))}
-            </div>
-
-            <textarea
-              value={currentFile.content}
-              onChange={(e) => handleContentChange(e.target.value)}
-              spellCheck={false}
-              className="flex-1 w-full h-full bg-slate-950 p-4 font-mono text-xs text-slate-200 leading-relaxed resize-none focus:outline-none"
-            />
+          <div className='flex-1 overflow-hidden'>
+            <Editor height="100%" language={currentFile.language==='javascript'?'javascript':currentFile.language} theme='vs-dark' value={currentFile.content} onChange={handleContentChange} options={{minimap:{enabled:false},fontSize:13,automaticLayout:true,scrollBeyondLastLine:false,wordWrap:'on',}}/>
           </div>
         </div>
       </div>

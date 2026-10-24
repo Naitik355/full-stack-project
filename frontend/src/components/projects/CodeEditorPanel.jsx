@@ -1,6 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Editor from '@monaco-editor/react';
-import { Code2, FilePlus2, FolderOpen, Loader2, Play, RefreshCw, Save, Terminal } from 'lucide-react';
+import {
+  Code2,
+  FilePlus2,
+  FolderOpen,
+  Loader2,
+  Play,
+  RefreshCw,
+  Save,
+  Terminal,
+  Download,
+  Pencil,
+  Trash2,
+  ChevronDown,
+  ChevronRight,
+} from 'lucide-react';
 import { Button } from '../common/Button';
 import { useToast } from '../../context/ToastContext';
 import {
@@ -8,6 +22,8 @@ import {
   getProjectCodeFile,
   getProjectCodeFiles,
   saveProjectCodeFile,
+  renameProjectCodeFile,
+  deleteProjectCodeFile,
 } from '../../api/codeFiles';
 
 function languageForPath(path) {
@@ -39,6 +55,37 @@ function languageForPath(path) {
   return (extension && languages[extension]) || 'plaintext';
 }
 
+const buildFileTree = (files) => {
+  const root = {};
+
+  files.forEach((file) => {
+    const parts = file.path.split('/').filter(Boolean);
+    let current = root;
+
+    parts.forEach((part, index) => {
+      const isFile = index === parts.length - 1;
+
+      if (isFile) {
+        current[part] = {
+          type: 'file',
+          file,
+        };
+      } else {
+        if (!current[part]) {
+          current[part] = {
+            type: 'folder',
+            children: {},
+          };
+        }
+
+        current = current[part].children;
+      }
+    });
+  });
+
+  return root;
+};
+
 export const CodeEditorPanel = ({ projectId, canEdit }) => {
   const [files, setFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -53,6 +100,7 @@ export const CodeEditorPanel = ({ projectId, canEdit }) => {
   const [runOutput, setRunOutput] = useState([]);
   const [running, setRunning] = useState(false);
   const { success, error: toastError } = useToast();
+  const [expandedFolders, setExpandedFolders] = useState({});
 
   const dirty = content !== savedContent;
 
@@ -121,6 +169,84 @@ export const CodeEditorPanel = ({ projectId, canEdit }) => {
     }
   };
 
+  const handleRename = async (file) => {
+    if (!canEdit) return;
+
+    if (
+      dirty &&
+      selectedFile?.id === file.id &&
+      !window.confirm('Discard unsaved changes before renaming this file?')
+    ) {
+      return;
+    }
+
+    const newPath = window.prompt('Enter the new file path:', file.path);
+    if (!newPath?.trim() || newPath.trim() === file.path) return;
+
+    try {
+      const result = await renameProjectCodeFile(
+        projectId,
+        file.id,
+        newPath.trim()
+      );
+
+      setFiles((current) =>
+        current
+          .map((item) => item.id === file.id ? result.file : item)
+          .sort((a, b) => a.path.localeCompare(b.path))
+      );
+
+      if (selectedFile?.id === file.id) {
+        setSelectedFile(result.file);
+        setVersion(result.file.version);
+        setSavedContent(content);
+        setConflict(false);
+      }
+
+      success('File renamed', result.file.path);
+    } catch (err) {
+      toastError(
+        'Could not rename file',
+        err instanceof Error ? err.message : 'Please try again.'
+      );
+    }
+  };
+
+  const handleDelete = async (file) => {
+    if (!canEdit) return;
+
+    if (
+      selectedFile?.id === file.id &&
+      dirty &&
+      !window.confirm('Delete this file and discard its unsaved changes?')
+    ) {
+      return;
+    }
+
+    if (!window.confirm(`Permanently delete "${file.path}"?`)) return;
+
+    try {
+      await deleteProjectCodeFile(projectId, file.id);
+
+      setFiles((current) => current.filter((item) => item.id !== file.id));
+
+      if (selectedFile?.id === file.id) {
+        setSelectedFile(null);
+        setContent('');
+        setSavedContent('');
+        setVersion(1);
+        setConflict(false);
+      }
+
+      success('File deleted', file.path);
+    } catch (err) {
+      toastError(
+        'Could not delete file',
+        err instanceof Error ? err.message : 'Please try again.'
+      );
+    }
+  };
+  
   const handleSave = async () => {
     if (!selectedFile || !dirty || !canEdit) return;
     setSaving(true);
@@ -172,6 +298,112 @@ export const CodeEditorPanel = ({ projectId, canEdit }) => {
     worker.onerror = (event) => { window.clearTimeout(timeout); worker.terminate(); URL.revokeObjectURL(blobUrl); setRunOutput(['ERROR: ' + event.message]); setRunning(false); };
     worker.postMessage(content);
   };
+  const handleExportZip = () => {
+    window.location.assign(
+      `/api/projects/${projectId}/code-files/export.zip`
+    );
+  };
+  const toggleFolder = (folderPath) => {
+    setExpandedFolders((previous) => ({
+      ...previous,
+      [folderPath]: !previous[folderPath],
+    }));
+  };
+  const renderTree = (nodes, parentPath = '') =>
+  Object.entries(nodes)
+    .sort(([nameA, nodeA], [nameB, nodeB]) => {
+      if (nodeA.type !== nodeB.type) {
+        return nodeA.type === 'folder' ? -1 : 1;
+      }
+
+      return nameA.localeCompare(nameB);
+    })
+    .map(([name, node]) => {
+      const nodePath = parentPath
+        ? `${parentPath}/${name}`
+        : name;
+
+      if (node.type === 'folder') {
+        const isExpanded = Boolean(expandedFolders[nodePath]);
+
+        return (
+          <div key={nodePath}>
+            <button
+              type="button"
+              onClick={() => toggleFolder(nodePath)}
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+              style={{
+                paddingLeft: `${8 + nodePath.split('/').length * 8}px`,
+              }}
+            >
+              {isExpanded ? (
+                <ChevronDown className="h-4 w-4 shrink-0" />
+              ) : (
+                <ChevronRight className="h-4 w-4 shrink-0" />
+              )}
+              <FolderOpen className="h-4 w-4 shrink-0" />
+              <span className="min-w-0 break-all">{name}</span>
+            </button>
+
+            {isExpanded && (
+              <div>{renderTree(node.children, nodePath)}</div>
+            )}
+          </div>
+        );
+      }
+
+      const file = node.file;
+      const isSelected = selectedFile?.id === file.id;
+
+      return (
+        <div
+          key={file.id}
+          className={`flex items-center gap-1 rounded-lg px-2 ${
+            isSelected ? 'bg-indigo-50' : 'hover:bg-slate-50'
+          }`}
+        >
+          <button
+            type="button"
+            onClick={() => void openFile(file)}
+            className={`flex min-w-0 flex-1 items-start gap-2 rounded-lg px-1 py-2 text-left text-sm ${
+              isSelected ? 'text-indigo-700' : 'text-slate-700'
+            }`}
+            style={{
+              paddingLeft: `${8 + nodePath.split('/').length * 8}px`,
+            }}
+            title={file.path}
+          >
+            <Code2 className="mt-0.5 h-4 w-4 shrink-0" />
+            <span className="min-w-0 break-all">{name}</span>
+          </button>
+
+          {canEdit && (
+            <div className="flex shrink-0 items-center">
+              <button
+                type="button"
+                title={`Rename ${file.path}`}
+                aria-label={`Rename ${file.path}`}
+                onClick={() => void handleRename(file)}
+                className="rounded p-2 text-slate-500 hover:bg-white hover:text-indigo-600"
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+
+              <button
+                type="button"
+                title={`Delete ${file.path}`}
+                aria-label={`Delete ${file.path}`}
+                onClick={() => void handleDelete(file)}
+                className="rounded p-2 text-slate-500 hover:bg-white hover:text-red-600"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        </div>
+      );
+    });
+
 
   const refreshSelected = async () => {
     if (!selectedFile) return;
@@ -190,7 +422,7 @@ export const CodeEditorPanel = ({ projectId, canEdit }) => {
       setOpening(false);
     }
   };
-
+  const fileTree = useMemo(() => buildFileTree(files), [files]);
   const language = useMemo(
     () => selectedFile ? languageForPath(selectedFile.path) : 'plaintext',
     [selectedFile]
@@ -206,6 +438,7 @@ export const CodeEditorPanel = ({ projectId, canEdit }) => {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Button size="sm" variant="outline" onClick={handleExportZip} leftIcon={<Download className="h-4 w-4" />}>Download ZIP</Button>
           <Button size="sm" variant="outline" onClick={() => void loadFiles()} disabled={loading}
             leftIcon={loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}>
             Refresh files
@@ -247,14 +480,8 @@ export const CodeEditorPanel = ({ projectId, canEdit }) => {
             <p className="p-4 text-sm text-slate-500">No code files yet. {canEdit ? 'Create a file to begin.' : 'An editor can create files.'}</p>
           ) : (
             <div className="max-h-[520px] overflow-y-auto p-2">
-              {files.map((file) => (
-                <button key={file.id} type="button" onClick={() => void openFile(file)}
-                  className={`flex w-full items-start gap-2 rounded-lg px-3 py-2 text-left text-sm ${selectedFile?.id === file.id ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'}`}>
-                  <Code2 className="mt-0.5 h-4 w-4 shrink-0" />
-                  <span className="min-w-0 break-all">{file.path}</span>
-                </button>
-              ))}
-            </div>
+             {renderTree(fileTree)}
+          </div>
           )}
         </aside>
 
@@ -306,5 +533,5 @@ export const CodeEditorPanel = ({ projectId, canEdit }) => {
         JavaScript runs in a temporary browser worker with a 2-second timeout. This is a preview, not a secure sandbox. Python, TypeScript, and other languages need a server-side execution service. GitHub sync and real-time collaboration are not included.
       </p>
     </div>
-  );
+      );
 };

@@ -22,3 +22,20 @@ export async function saveProjectCodeFile(projectId, fileId, content, version) {
     body: JSON.stringify({ content, version }),
   });
 }
+
+export async function renameProjectCodeFile(projectId, fileId, path) {
+  return request(`/projects/${projectId}/code-files/${fileId}/`, {
+    method: 'PATCH',
+    body: JSON.stringify({ path }),
+  });
+}
+
+export async function deleteProjectCodeFile(projectId, fileId) {
+  return request(`/projects/${projectId}/code-files/${fileId}/`, {
+    method: 'DELETE',
+  });
+}
+
+export function getProjectCodeFilesExportUrl(projectId) {
+  return `/api/projects/${projectId}/code-files/export.zip`;
+}

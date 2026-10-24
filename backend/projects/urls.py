@@ -13,4 +13,5 @@ urlpatterns=[
     path("<int:project_id>/documents/",project_documents,name="project_documents"),
     path("<int:project_id>/code-files/",code_files.project_code_files,name="project-code-files"),
     path("<int:project_id>/code-files/<int:file_id>/",code_files.project_code_file_detail,name="project-code-file-detail",),
+    path("<int:project_id>/code-files/export.zip",code_files.export_project_code_files,name="project-code-files-export"),
 ]

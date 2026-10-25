@@ -5,13 +5,14 @@ import { ExcalidrawWrapper } from '../components/boards/ExcalidrawWrapper';
 import { AiDrawingToCodePanel } from '../components/boards/AiDrawingToCodePanel';
 import { Button } from '../components/common/Button';
 import { ArrowLeft, Presentation, AlertCircle, RefreshCw } from 'lucide-react';
+import { editor } from 'monaco-editor';
 
 export const BoardViewPage = () => {
   const { projectId, boardId } = useParams();
   const bId = parseInt(boardId || '0', 10);
   const pId = parseInt(projectId || '0', 10);
   const navigate = useNavigate();
-
+  const [tldrawEditor, setTldrawEditor] = useState(null);
   const [board, setBoard] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -97,7 +98,7 @@ export const BoardViewPage = () => {
       {/* Main Canvas Component */}
       <ExcalidrawWrapper
         board={board}
-        onOpenAiAssistant={() => setIsAiOpen(true)}
+        onOpenAiAssistant={(editor)=>{setTldrawEditor(editor); setIsAiOpen(true)}}
       />
 
       {/* AI Assistant Drawer */}
@@ -105,6 +106,7 @@ export const BoardViewPage = () => {
         isOpen={isAiOpen}
         onClose={() => setIsAiOpen(false)}
         boardTitle={board.title}
+        editor={tldrawEditor}
       />
     </div>
   );

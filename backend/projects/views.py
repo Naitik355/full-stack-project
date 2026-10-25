@@ -1,13 +1,14 @@
 from django.shortcuts import render
 from django.db import transaction
 from rest_framework import generics,permissions
-from .models import Projects,Membership
+from .models import Projects,Membership,ProjectMeeting
 from .serializers import ProjectSerializer
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_http_methods
 import json
+import uuid
 from django.contrib.auth import get_user_model
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import get_user_model
@@ -218,3 +219,60 @@ def project_member_details(request,project_id,user_id):
         "id":target.user_id,
         "role":target.role
     })
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def project_meetings(request, project_id):
+    get_object_or_404(Membership, project_id=project_id, user=request.user)
+
+    if request.method == "GET":
+        meetings = ProjectMeeting.objects.filter(
+            project_id=project_id,
+            invited_members=request.user,
+        )
+        return JsonResponse({
+            "meetings": [
+                {
+                    "id": m.id,
+                    "title": m.title,
+                    "roomName": m.room_name,
+                }
+                for m in meetings
+            ]
+        })
+
+    data = json.loads(request.body)
+    meeting = ProjectMeeting.objects.create(
+        project_id=project_id,
+        title=data["title"],
+        room_name=f"project-{project_id}-{uuid.uuid4().hex[:12]}",
+        created_by=request.user,
+    )
+    meeting.invited_members.add(request.user)
+
+    return JsonResponse({
+        "id": meeting.id,
+        "title": meeting.title,
+        "roomName": meeting.room_name,
+    }, status=201)
+
+
+@login_required
+@require_http_methods(["POST"])
+def invite_meeting_members(request, project_id, meeting_id):
+    get_object_or_404(Membership, project_id=project_id, user=request.user)
+    meeting = get_object_or_404(
+        ProjectMeeting, id=meeting_id, project_id=project_id,
+        created_by=request.user,
+    )
+
+    data = json.loads(request.body)
+    member_ids = data.get("member_ids", [])
+
+    valid_ids = Membership.objects.filter(
+        project_id=project_id, user_id__in=member_ids
+    ).values_list("user_id", flat=True)
+
+    meeting.invited_members.add(*valid_ids)
+    return JsonResponse({"message": "Members invited"})

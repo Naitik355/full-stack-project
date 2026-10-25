@@ -12,6 +12,7 @@ export const ExcalidrawWrapper = ({
   const [copied, setCopied] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const { success } = useToast();
+  const [tldrawEditor, setTldrawEditor] = useState(null);
   const tldrawRoomId = `convergedesk-${board.room_id}`;
 
   const handleCopyLink = async () => {
@@ -44,7 +45,7 @@ export const ExcalidrawWrapper = ({
         </div>
         <div className="flex items-center gap-2">
           {onOpenAiAssistant && (
-            <Button size="sm" variant="primary" onClick={onOpenAiAssistant}
+            <Button size="sm" variant="primary" onClick={() => onOpenAiAssistant?.(tldrawEditor)}
               leftIcon={<Sparkles className="w-3.5 h-3.5 text-amber-300" />}
               className="bg-indigo-600 hover:bg-indigo-700 text-white">
               Draw to Code
@@ -63,7 +64,7 @@ export const ExcalidrawWrapper = ({
         </div>
       </div>
       <div className="flex-1 w-full h-full relative bg-white overflow-hidden">
-        <TldrawCollaborativeCanvas roomId={tldrawRoomId} />
+        <TldrawCollaborativeCanvas roomId={tldrawRoomId} onEditorMount={setTldrawEditor}/>
       </div>
       <div className="px-4 py-2 text-xs bg-amber-950 text-amber-200">
         Local testing only: this demo room is public and may not persist. Do not use sensitive content.

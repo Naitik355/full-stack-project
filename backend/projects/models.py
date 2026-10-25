@@ -104,3 +104,30 @@ class ProjectCodeFile(models.Model):
 
     def __str__(self):
         return f"{self.projects_id}: {self.relative_path}"
+
+
+class ProjectMeeting(models.Model):
+    project = models.ForeignKey(
+        Projects,
+        on_delete=models.CASCADE,
+        related_name="meetings",
+    )
+    title = models.CharField(max_length=200)
+    room_name = models.CharField(max_length=200, unique=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="created_project_meetings",
+    )
+    invited_members = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        related_name="project_meeting_invitations",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.title} - {self.project.name}"

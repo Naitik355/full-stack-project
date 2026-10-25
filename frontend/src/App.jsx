@@ -15,7 +15,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
 import { NotFoundPage } from './pages/NotFoundPage';
-
+import { AcceptProjectInvitationPage } from './pages/AcceptProjectInvitationPage';
 export default function App() {
   return (
     <ToastProvider>
@@ -25,6 +25,7 @@ export default function App() {
             {/* Standalone Authentication Routes */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
+            <Route path="/accept-project-invitation"element={<AcceptProjectInvitationPage />}/>
 
             {/* Persistent Shell Layout Routes */}
             <Route element={<AppShell />}>

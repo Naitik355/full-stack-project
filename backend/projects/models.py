@@ -131,3 +131,52 @@ class ProjectMeeting(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.project.name}"
+
+
+
+class ProjectInvitation(models.Model):
+    class Role(models.TextChoices):
+        VIEWER = "viewer", "Viewer"
+        EDITOR = "editor", "Editor"
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        ACCEPTED = "accepted", "Accepted"
+        DECLINED = "declined", "Declined"
+        REVOKED = "revoked", "Revoked"
+        EXPIRED = "expired", "Expired"
+
+    project = models.ForeignKey(
+        Projects,
+        on_delete=models.CASCADE,
+        related_name="invitations",
+    )
+    email = models.EmailField()
+    role = models.CharField(
+        max_length=10,
+        choices=Role.choices,
+        default=Role.EDITOR,
+    )
+    invited_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="sent_project_invitations",
+    )
+    token_hash = models.CharField(max_length=64, unique=True)
+    status = models.CharField(
+        max_length=10,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    accepted_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["project", "email", "status"]),
+        ]
+
+    def __str__(self):
+        return f"{self.email} invited to {self.project.name}"
